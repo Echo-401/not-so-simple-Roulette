@@ -1,25 +1,45 @@
 #include <lib.hpp>
 
 enum class Color { RED, BLACK, GREEN };
+enum class bettype {STRAIGHT, SPLIT, STREET, CORNERR, SIXLINE, TRIO, BASKET, COLUMN, DOZEN, COLOR, PARITY, HIGHLOW};
+enum class betKeyword {HIGH, LOW, EVEN, ODD, RED, BLACK, GREEN};
 
-struct spin {
+struct token {
     int number;
     Color color;  
 };
 
-std::ostream& operator<<(std::ostream& os, Color c) {
-    switch (c) {
-        case Color::RED:   return os << "RED";
-        case Color::BLACK: return os << "BLACK";
-        case Color::GREEN: return os << "GREEN";
-    }
-    return os << '?';
-}
-std::ostream& operator<<(std::ostream& os, const spin& s) {
-    return os << s.number << " [" << s.color << "]";
+std::istream& operator>>(std::istream& in, bettype& type) {
+    std::string token;
+    in >> token;
+    for (auto& c : token) c = std::tolower(c);
+
+    if (token == "straight") type = bettype::STRAIGHT;
+    else if (token == "split") type = bettype::SPLIT;
+    else if (token == "street") type = bettype::STREET;
+    else if (token == "corner") type = bettype::CORNERR;
+    else if (token == "sixline") type = bettype::SIXLINE;
+    else if (token == "trio") type = bettype::TRIO;
+    else if (token == "basket") type = bettype::BASKET;
+    else if (token == "column") type = bettype::COLUMN;
+    else if (token == "dozen") type = bettype::DOZEN;
+    else if (token == "color") type = bettype::COLOR;
+    else if (token == "parity") type = bettype::PARITY;
+    else if (token == "highlow") type = bettype::HIGHLOW;
+    else in.setstate(std::ios::failbit); // mark as invalid
+
+    return in;
 }
 
-spin roll() {
+bool operator==(betKeyword ihs, Color rhs) {
+    switch (ihs) {
+        case betKeyword::RED:   return rhs == Color::RED;
+        case betKeyword::BLACK: return rhs == Color::BLACK;
+        case betKeyword::GREEN: return rhs == Color::GREEN;
+        default:                return false;
+    }
+}
+token roll() {
     static constexpr std::array<Color, 37> COLORS = {
         Color::GREEN,   // 0
         Color::RED,     // 1
@@ -63,21 +83,114 @@ spin roll() {
     static thread_local std::mt19937 rng(std::random_device{}());
     static thread_local std::uniform_int_distribution<int> dist(0, 36);
     int n = dist(rng);
-    return spin{ n, COLORS[n] };
+    return token{ n, COLORS[n] };
 }
 
+int multipliers(bettype betType) {
+    int payoutMult;
+        switch (betType) {
+        case bettype::STRAIGHT:   payoutMult = 35; break;
+        case bettype::SPLIT:      payoutMult = 17; break;
+        case bettype::STREET:     payoutMult = 11; break;
+        case bettype::CORNERR:    payoutMult = 8;  break;
+        case bettype::SIXLINE:    payoutMult = 5;  break;
+        case bettype::TRIO:       payoutMult = 11; break;
+        case bettype::BASKET:     payoutMult = 8;  break;
+        case bettype::COLUMN:     payoutMult = 2;  break;
+        case bettype::DOZEN:      payoutMult = 2;  break;
+        case bettype::COLOR:      payoutMult = 1;  break;
+        case bettype::PARITY:     payoutMult = 1;  break;
+        case bettype::HIGHLOW:    payoutMult = 1;  break;
+        default:                  payoutMult = 0;  break;
+    }
+    return payoutMult;
+}
+
+bool bet(bettype betType, token rollOut , betKeyword betKeyword, int betToken) {
+    switch (betType) {
+        case bettype::STRAIGHT: {
+            if (rollOut.number == betToken) return true;
+            else return false;
+            break;
+        }
+        case bettype::SPLIT: {
+            break;
+        }
+        case bettype::STREET: {
+            break;
+        }
+        case bettype::CORNERR: {
+            break;
+        }
+        case bettype::SIXLINE: {
+            break;
+        }
+        case bettype::TRIO: {
+            break;
+        }
+        case bettype::BASKET: {
+            if (rollOut.number >= 0 && rollOut.number <= 3) return true;
+            else return false;
+            break;
+        }
+        case bettype::COLUMN: {
+            if ((rollOut.number != 0) && (betToken == ((rollOut.number - 1) % 3 + 1))) return true;
+            else return false;
+            break;
+        }
+        case bettype::DOZEN: {
+            if ((rollOut.number != 0) && (betToken == ((rollOut.number - 1) / 12 + 1))) return true;
+            else return false;
+            break;
+        }
+        case bettype::COLOR: {
+            if (betKeyword == rollOut.color) return true;
+            else return false;
+            break;
+        }
+        case bettype::PARITY: {
+            if (rollOut.number != 0) return false;
+            else {
+                switch(betKeyword) {
+                    case betKeyword::EVEN:{
+                        return rollOut.number % 2 == 0;
+                        break;    
+                    }
+                    case betKeyword::ODD: {
+                        return rollOut.number % 2 == 1;
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+        case bettype::HIGHLOW: {
+            if (rollOut.number != 0) return false;
+            else {
+                switch(betKeyword) {
+                    case betKeyword::HIGH:{
+                        return rollOut.number >= 19;
+                        break;    
+                    }
+                    case betKeyword::LOW: {
+                        return rollOut.number <= 18;
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+
+    }
+    return ;
+}
+
+void bank() {
+
+    return ;
+}
 
 int main() {
-    int betAmomunt, betNumber;
-
-    std::cout << "Enter bet number (0-36): ";
-    std::cin >> betNumber;
-    spin rollOut = roll();
-    if (rollOut.number == betNumber) {
-        std::cout << "You won! Rolled: " << rollOut << "\n";
-    } else {
-        std::cout << "You lost. Rolled: " << rollOut << "\n";
-    }
 
     system("pause");
     return 0;
